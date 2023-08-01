@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Some.
+ */
+
+/**
  * Implements hook_schema().
  */
 function task3_schema() {
