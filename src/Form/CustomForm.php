@@ -2,11 +2,12 @@
 
 namespace Drupal\task3\Form;
 
-use Drupal\user\Entity\User;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Database\Connection;
 
 /**
  * Extending base class.
@@ -19,15 +20,20 @@ class CustomForm extends FormBase {
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
-
+  /**
+   * @var \Drupal\Core\Session\AccountInterface
+   */
+  protected $account;
   /**
    * CustomForm constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager service.
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager) {
+  public function __construct(EntityTypeManagerInterface $entityTypeManager, AccountInterface $account, Connection $database) {
     $this->entityTypeManager = $entityTypeManager;
+    $this->account = $account;
+    $this->database = $database;
   }
 
   /**
@@ -35,7 +41,9 @@ class CustomForm extends FormBase {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('current_user'),
+      $container->get('database')
     );
   }
 
@@ -50,7 +58,7 @@ class CustomForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $title = NULL) {
-    $user = User::load(\Drupal::currentUser()->id());
+    $user = $this->entityTypeManager->getStorage('user')->load($this->account->id());
     $form['title'] = [
       '#type' => 'textfield',
       '#title' => 'Title',
@@ -100,7 +108,7 @@ class CustomForm extends FormBase {
         'title' => $title,
         'user_id' => $user_id,
       ];
-      \Drupal::database()->insert('user_information')->fields($data)->execute();
+      $this->database->insert('user_information')->fields($data)->execute();
     }
   }
 
